@@ -29,6 +29,7 @@ let persons = [
 app.use(express.json());
 app.use(morgan("combined"));
 app.use(cors());
+app.use(express.static("dist"));
 
 app.get("/api/persons", (req, res) => {
   res.json(persons);
@@ -58,7 +59,7 @@ const generateID = () => {
   return randomID;
 };
 
-app.post("/api/persons", function (req, res) {
+app.post("/api/persons", function(req, res) {
   const body = req.body;
   const nameExist = persons.find((person) => person.name === body.name);
   if (nameExist) {
