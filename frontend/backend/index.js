@@ -37,6 +37,16 @@ const requestLogger = (request, response, next) => {
   next();
 };
 
+const errorHandler = (error, request, response, next) => {
+  console.error(error.message);
+
+  if (error.name === "CastError") {
+    return response.status(400).send({ error: "malformatted id" });
+  }
+
+  next(error);
+};
+
 const unknownEndpoint = (request, response) => {
   response.status(404).send({ error: "unknown endpoint" });
 };
@@ -54,39 +64,36 @@ app.get("/api/persons", (req, res) => {
 });
 
 app.get("/info", (req, res) => {
-  const personInfo = persons.length;
-  let date = new Date();
-  res.send(`Phonebook has info for ${personInfo} people <br/> ${date}`);
+  Person.countDocuments({})
+    .then((count) => {
+      let date = new Date();
+      res.send(`Phonebook has info for ${count} people <br/> ${date}`);
+    })
+    .catch((error) => {
+      console.error(error);
+      res.status(500).send({ error: "An error occurred while getting info." });
+    });
 });
 
-app.get("/api/persons/:id", (req, res) => {
-  const id = Number(req.params.id);
-  const person = persons.find((person) => person.id === id);
-  if (person) res.json(person);
-  else res.status(404).end();
+app.get("/api/persons/:id", (req, res, next) => {
+  Person.findById(req.params.id)
+    .then((person) => {
+      if (person) res.json(person);
+      else res.json(404).end();
+    })
+    .catch((error) => next(error));
 });
-app.delete("/api/persons/:id", (req, res) => {
-  const id = Number(req.params.id);
-  persons = persons.filter((note) => note.id !== id);
-  res.status(204).end();
-});
-const generateID = () => {
-  const randomID = Math.floor(
-    Math.random() * (Math.floor(4000) - Math.ceil(5) + Math.ceil(5)),
-  );
-  return randomID;
-};
 
-app.post("/api/persons", function (req, res) {
+app.delete("/api/persons/:id", (req, res, next) => {
+  Person.findByIdAndRemove(req.params.id)
+    .then((result) => {
+      res.status(204).end();
+    })
+    .catch((error) => next(error));
+});
+
+app.post("/api/persons", function(req, res) {
   const body = req.body;
-  // const nameExist = Person.find({ name }).then(
-  //   (person) => person.name === name,
-  // );
-  // if (nameExist) {
-  //   return res.status(400).json({
-  //     error: "name already exist",
-  //   });
-  // }
 
   if (!body.name) {
     return res.status(400).json({
@@ -122,7 +129,23 @@ app.post("/api/persons", function (req, res) {
     });
 });
 
+app.put("/api/persons/:id", (req, res, next) => {
+  const body = req.body;
+
+  const person = {
+    name: body.name,
+    number: body.number,
+  };
+
+  Person.findByIdAndUpdate(req.params.id, person, { new: true })
+    .then((updatedPerson) => {
+      res.json(updatedPerson);
+    })
+    .catch((error) => next(error));
+});
+
 app.use(unknownEndpoint);
+app.use(errorHandler);
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
