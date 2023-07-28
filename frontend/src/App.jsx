@@ -27,7 +27,7 @@ const App = () => {
     if (existingPerson) {
       if (
         window.confirm(
-          `${existingPerson.name} is already added to the phonebook, replace the old number with a new one?`
+          `${existingPerson.name} is already added to the phonebook, replace the old number with a new one?`,
         )
       ) {
         const updatedPerson = { ...existingPerson, number: person.number };
@@ -35,7 +35,9 @@ const App = () => {
           .updateData(existingPerson.id, updatedPerson)
           .then((updatedData) => {
             setPersons(
-              persons.map((p) => (p.id !== existingPerson.id ? p : updatedData))
+              persons.map((p) =>
+                p.id !== existingPerson.id ? p : updatedData,
+              ),
             );
           })
           .catch((error) => {
@@ -66,13 +68,13 @@ const App = () => {
     (person) =>
       person &&
       person.name &&
-      person.name.toLowerCase().includes(newFilter.toLowerCase())
+      person.name.toLowerCase().includes(newFilter.toLowerCase()),
   );
   const handleDelete = (id) => {
     const personToDelete = persons.find((p) => p.id === id);
     if (
       window.confirm(
-        `Are you sure you want to delete ${personToDelete.name} ? `
+        `Are you sure you want to delete ${personToDelete.name} ? `,
       )
     ) {
       personService
